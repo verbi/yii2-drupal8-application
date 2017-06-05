@@ -1,0 +1,24 @@
+{
+	"name": "verbi/yii2-drupal8-application",
+	"description": "Yii2 Drupal8 Application",
+	"keywords": ["yii2", "extension", "drupal8", "application"],
+	"type": "yii2-extension",
+	"license": "GPLv3",
+	"authors": [
+		{
+			"name": "Philip Verbist",
+			"email": "philip.verbist@gmail.com"
+		}
+	],
+	"support": {
+		"source": "https://github.com/verbi/yii2-confirmation-filter"
+	},
+        "require": {
+            "yiisoft/yii2": "*"
+        },
+	"autoload": {
+		"psr-4": {
+			"verbi\\yii2Drupal8Application\\": "src/"
+		}
+	}
+}
