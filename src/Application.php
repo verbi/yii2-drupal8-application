@@ -1,10 +1,16 @@
 <?php
 
-
 namespace verbi\yii2Drupal8Application;
+
 use Yii;
 use yii\helpers\Url;
 use yii\base\InvalidRouteException;
+use verbi\yii2Drupal8Application\helpers\Request;
+use verbi\yii2Drupal8Application\helpers\Response;
+use verbi\yii2Drupal8Application\helpers\Session;
+use verbi\yii2Drupal8Application\helpers\User;
+use verbi\yii2Drupal8Application\helpers\ErrorHandler;
+use verbi\yii2Drupal8Application\exceptions\NotFoundHttpException;
 
 /**
  * Application is the base class for all drupal8 application classes.
@@ -20,26 +26,38 @@ use yii\base\InvalidRouteException;
  * @author Philip Verbist <philip.verbist@gmail.com>
  * @since 2.0
  */
-class Application extends \yii\web\Application
-{
+class Application extends \yii\web\Application {
+
+    public $layout;
+    public $bootstrap = ['log'];
+    public $params = [
+        'adminEmail' => 'admin@example.com',
+    ];
+
     /**
      * @inheritdoc
      */
-    protected function bootstrap()
-    {
+    protected function bootstrap() {
         $request = $this->getRequest();
         Yii::setAlias('@webroot', dirname($request->getScriptFile()));
         Yii::setAlias('@web', $request->getBaseUrl());
         parent::bootstrap();
     }
+
+    public function run() {
+        ob_start();
+        parent::run();
+        ob_end_clean();
+        return $this->getResponse();
+    }
+
     /**
      * Handles the specified request.
      * @param Request $request the request to be handled
      * @return Response the resulting response
      * @throws NotFoundHttpException if the requested route is invalid
      */
-    public function handleRequest($request)
-    {
+    public function handleRequest($request) {
         if (empty($this->catchAll)) {
             try {
                 list ($route, $params) = $request->resolve();
@@ -76,17 +94,55 @@ class Application extends \yii\web\Application
             throw new NotFoundHttpException(Yii::t('yii', 'Page not found.'), $e->getCode(), $e);
         }
     }
+
     /**
      * @inheritdoc
      */
-    public function coreComponents()
-    {
+    public function coreComponents() {
         return array_merge(parent::coreComponents(), [
-            'request' => ['class' => 'yii\web\Request'],
-            'response' => ['class' => 'yii\web\Response'],
-            'session' => ['class' => 'yii\web\Session'],
-            'user' => ['class' => 'yii\web\User'],
-            'errorHandler' => ['class' => 'yii\web\ErrorHandler'],
+            'request' => [
+                'class' => Request::className(),
+                'cookieValidationKey' => 'so-bLQoWlm1IIiChzihcjtzMZnsbSQ0M',
+            ],
+            'response' => ['class' => Response::className()],
+            'session' => ['class' => Session::className()],
+            'user' => [
+                'class' => User::className(),
+                'identityClass' => 'app\models\User',
+                'enableAutoLogin' => true,
+            ],
+            'errorHandler' => [
+                'class' => ErrorHandler::className(),
+                'errorAction' => 'site/error',
+            ],
+            'cache' => [
+                'class' => 'yii\caching\FileCache',
+            ],
+            'mailer' => [
+                'class' => 'yii\swiftmailer\Mailer',
+                // send all mails to a file by default. You have to set
+                // 'useFileTransport' to false and configure a transport
+                // for the mailer to send real emails.
+                'useFileTransport' => true,
+            ],
+            'log' => [
+                'class' => 'yii\log\Dispatcher',
+                'traceLevel' => YII_DEBUG ? 3 : 0,
+                'targets' => [
+                    [
+                        'class' => 'yii\log\FileTarget',
+                        'levels' => ['error', 'warning'],
+                    ],
+                ],
+            ],
+            'db' => [
+                'class' => 'yii\db\Connection',
+                'dsn' => 'mysql:host=localhost;dbname=yii2basic',
+                'username' => 'root',
+                'password' => '',
+                'charset' => 'utf8',
+            ],
         ]);
     }
+
 }
